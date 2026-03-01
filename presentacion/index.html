@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transacciones Financieras</title>
+  <style>
+    :root {
+      --verde:   #4d1a7a;
+      --verde2:  #7a25a2;
+      --verde-claro: #eaf7f0;
+      --gris:    #f4f6f9;
+      --borde:   #dde3ec;
+      --rojo:    #e74c3c;
+      --rojo-claro: #fdecea;
+      --texto:   #1c2833;
+      --texto2:  #6c7a89;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris);color:var(--texto);min-height:100vh;}
+
+    header{background:var(--verde);color:#fff;padding:14px 28px;display:flex;
+      justify-content:space-between;align-items:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:100;}
+    header h1{font-size:1.1rem;font-weight:700;}
+    .header-derecha{display:flex;align-items:center;gap:10px;}
+    #info-usuario{font-size:.85rem;opacity:.85;}
+    #btn-cerrar{background:rgba(255,255,255,.18);border:none;color:#fff;
+      padding:7px 16px;border-radius:20px;cursor:pointer;font-size:.85rem;font-weight:600;}
+
+    .contenedor{max-width:900px;margin:28px auto;padding:0 16px;}
+
+    .saldo-hero{background:linear-gradient(135deg,#451a7a 0%,#9125a2 60%,#b72ecc 100%);
+      border-radius:16px;padding:28px 28px 24px;color:#fff;
+      margin-bottom:24px;position:relative;overflow:hidden;}
+    .saldo-hero::after{content:'';position:absolute;right:-40px;top:-40px;
+      width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.07);}
+    .saldo-etiqueta{font-size:.8rem;opacity:.75;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+    .saldo-monto{font-size:2.6rem;font-weight:800;letter-spacing:-1px;}
+    .saldo-sub{font-size:.8rem;opacity:.6;margin-top:4px;}
+    .saldo-actualizar{position:absolute;top:18px;right:20px;
+      background:rgba(255,255,255,.2);border:none;color:#fff;
+      border-radius:50%;width:36px;height:36px;font-size:1rem;cursor:pointer;}
+
+    .tabs{display:flex;gap:6px;margin-bottom:20px;background:#fff;
+      border-radius:12px;padding:6px;border:1px solid var(--borde);}
+    .tab{flex:1;text-align:center;padding:10px 4px;border-radius:8px;
+      border:none;background:transparent;cursor:pointer;
+      font-size:.85rem;font-weight:600;color:var(--texto2);transition:all .2s;}
+    .tab.activo{background:var(--verde2);color:#fff;box-shadow:0 2px 8px rgba(37,162,102,.35);}
+
+    .tarjeta{background:#fff;border-radius:16px;border:1px solid var(--borde);
+      padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+    .tarjeta-titulo{font-size:1rem;font-weight:700;color:var(--verde);
+      margin-bottom:22px;padding-bottom:12px;border-bottom:2px solid var(--verde-claro);}
+
+    /* Grid de 3 tipos */
+    .tipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px;}
+    .tipo-btn{border:2px solid var(--borde);border-radius:14px;background:#fff;
+      padding:18px 12px;cursor:pointer;text-align:center;transition:all .2s;
+      display:flex;flex-direction:column;align-items:center;gap:8px;}
+    .tipo-btn:hover{border-color:var(--verde2);background:var(--verde-claro);}
+    .tipo-btn.seleccionado{border-color:var(--verde2);background:var(--verde-claro);
+      box-shadow:0 0 0 3px rgba(37,162,102,.15);}
+    .tipo-btn .icono{font-size:1.8rem;}
+    .tipo-btn .nombre{font-size:.85rem;font-weight:700;}
+    .tipo-btn .tasa{font-size:.75rem;color:var(--texto2);}
+
+    .form-tx{display:none;animation:fadeIn .25s ease;}
+    .form-tx.visible{display:block;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    .seccion-titulo{font-size:.78rem;font-weight:700;color:var(--texto2);
+      text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;margin-top:20px;}
+
+    .campo{margin-bottom:14px;}
+    label{font-size:.82rem;font-weight:600;color:var(--texto2);display:block;margin-bottom:5px;}
+    input,select{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:10px;
+      font-size:.95rem;color:var(--texto);outline:none;transition:border .2s,box-shadow .2s;background:#fff;}
+    input:focus,select:focus{border-color:var(--verde2);box-shadow:0 0 0 3px rgba(37,162,102,.12);}
+    .input-prefijo{position:relative;}
+    .input-prefijo span{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+      color:var(--texto2);font-weight:700;}
+    .input-prefijo input{padding-left:28px;}
+
+    .monto-grande{text-align:center;padding:20px 0 12px;}
+    .monto-grande label{font-size:.88rem;color:var(--texto2);margin-bottom:12px;display:block;}
+    .monto-grande-wrap{display:flex;align-items:center;justify-content:center;gap:4px;}
+    .monto-grande-wrap .simbolo{font-size:1.6rem;color:var(--verde2);font-weight:800;}
+    .monto-grande-wrap input{font-size:2.4rem;font-weight:800;text-align:center;width:220px;
+      border:none;border-bottom:3px solid var(--borde);border-radius:0;
+      padding:8px 4px;color:var(--verde);background:transparent;}
+    .monto-grande-wrap input:focus{border-color:var(--verde2);box-shadow:none;}
+
+    .preview-comision{background:var(--gris);border-radius:10px;
+      padding:14px 16px;margin:12px 0;font-size:.88rem;display:none;}
+    .preview-comision.visible{display:block;}
+    .preview-fila{display:flex;justify-content:space-between;padding:4px 0;color:var(--texto2);}
+    .preview-fila.total{font-weight:700;color:var(--texto);
+      border-top:1px solid var(--borde);margin-top:6px;padding-top:8px;}
+    .preview-fila.rojo-txt{color:var(--rojo);}
+
+    .contacto-card{display:flex;align-items:center;gap:14px;
+      background:var(--gris);border-radius:12px;padding:12px 14px;
+      margin-bottom:10px;border:1.5px solid var(--borde);cursor:pointer;transition:border-color .2s;}
+    .contacto-card:hover{border-color:var(--verde2);}
+    .contacto-card.seleccionado{border-color:var(--verde2);background:var(--verde-claro);}
+    .avatar{width:42px;height:42px;border-radius:50%;background:var(--verde2);
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:1rem;flex-shrink:0;}
+    .contacto-info .cn{font-weight:600;font-size:.88rem;}
+    .contacto-info .cc{font-size:.76rem;color:var(--texto2);}
+
+    .verificacion-pwd{background:#fff8f8;border:1.5px solid #f5c6c6;
+      border-radius:12px;padding:18px;margin:18px 0;}
+    .verificacion-pwd .vc-icono{font-size:2rem;text-align:center;margin-bottom:6px;}
+    .verificacion-pwd .vc-msg{font-size:.84rem;color:var(--rojo);text-align:center;
+      margin-bottom:14px;font-weight:600;}
+    .pwd-wrap{position:relative;}
+    .pwd-wrap input{padding-right:44px;}
+    .pwd-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+      background:none;border:none;cursor:pointer;font-size:1rem;color:var(--texto2);}
+
+    .btn{padding:14px 22px;border:none;border-radius:12px;font-size:.95rem;
+      cursor:pointer;font-weight:700;transition:all .2s;display:flex;
+      align-items:center;justify-content:center;gap:8px;width:100%;}
+    .btn:hover{opacity:.88;transform:translateY(-1px);}
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+    .btn-verde{background:var(--verde2);color:#fff;box-shadow:0 4px 14px rgba(37,162,102,.3);}
+    .btn-rojo{background:var(--rojo);color:#fff;box-shadow:0 4px 14px rgba(231,76,60,.25);}
+    .btn-outline{background:transparent;border:2px solid var(--borde);color:var(--texto2);}
+    .btn-volver{background:none;border:none;color:var(--texto2);cursor:pointer;
+      font-size:.85rem;display:flex;align-items:center;gap:4px;padding:0;margin-bottom:18px;width:auto;}
+
+    .alerta{padding:13px 16px;border-radius:10px;margin-bottom:16px;
+      font-size:.88rem;font-weight:600;display:none;align-items:center;gap:10px;}
+    .alerta.visible{display:flex;}
+    .alerta-ok{background:#d4edda;color:#5f1a7a;}
+    .alerta-err{background:var(--rojo-claro);color:var(--rojo);}
+
+    .tx-item{display:flex;align-items:center;gap:14px;padding:14px 0;
+      border-bottom:1px solid var(--borde);}
+    .tx-item:last-child{border-bottom:none;}
+    .tx-icono-wrap{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:1.2rem;flex-shrink:0;}
+    .tx-icono-wrap.retiro{background:var(--rojo-claro);}
+    .tx-icono-wrap.transferencia{background:#dce9fd;}
+    .tx-icono-wrap.pago{background:#fef3cd;}
+    .tx-det{flex:1;}
+    .tx-tipo{font-weight:700;font-size:.88rem;text-transform:capitalize;}
+    .tx-fecha{font-size:.74rem;color:var(--texto2);}
+    .tx-id-btn{font-size:.7rem;color:var(--texto2);background:var(--gris);
+      border:none;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:3px;}
+    .tx-amt{text-align:right;}
+    .tx-amt .val{font-weight:700;font-size:.95rem;color:var(--rojo);}
+    .tx-amt .com{font-size:.72rem;color:var(--texto2);}
+
+    .resumen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:22px;}
+    .resumen-item{background:var(--gris);border-radius:12px;padding:16px;text-align:center;}
+    .ri-ico{font-size:1.6rem;margin-bottom:6px;}
+    .ri-tipo{font-size:.74rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.4px;}
+    .ri-monto{font-size:1.2rem;font-weight:800;color:var(--verde);}
+    .ri-sub{font-size:.74rem;color:var(--texto2);}
+
+    .ver-res{padding:16px;border-radius:12px;margin-top:14px;font-size:.88rem;}
+    .ver-ok{background:#d4edda;color:#7a481a;}
+    .ver-err{background:var(--rojo-claro);color:var(--rojo);}
+
+    /* Modal solo para transferencia y pago */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
+      display:none;align-items:flex-end;justify-content:center;
+      z-index:1000;backdrop-filter:blur(3px);}
+    .modal-overlay.visible{display:flex;}
+    .modal{background:#fff;border-radius:24px 24px 0 0;
+      padding:28px 28px 36px;width:100%;max-width:500px;
+      animation:slideUp .3s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{width:40px;height:4px;background:var(--borde);border-radius:2px;margin:0 auto 20px;}
+    .modal-titulo{font-size:1.05rem;font-weight:700;margin-bottom:4px;}
+    .modal-sub{font-size:.84rem;color:var(--texto2);margin-bottom:20px;}
+    .modal-resumen{background:var(--gris);border-radius:12px;padding:16px;margin-bottom:18px;}
+    .modal-fila{display:flex;justify-content:space-between;padding:5px 0;font-size:.88rem;}
+    .modal-fila.dest-rojo{font-weight:700;font-size:1rem;color:var(--rojo);
+      border-top:1px solid var(--borde);margin-top:6px;padding-top:10px;}
+    .modal-btns{display:flex;gap:10px;}
+    .modal-btns .btn{flex:1;}
+
+    #pantalla-auth{min-height:100vh;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(160deg,#571a7a 0%,#4f25a2 50%,#9a2ecc 100%);}
+    .auth-box{background:#fff;border-radius:24px;padding:36px 32px;
+      width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+    .auth-logo{text-align:center;margin-bottom:24px;}
+    .auth-logo .logo-ico{font-size:2.8rem;}
+    .auth-logo h2{font-size:1.4rem;font-weight:800;color:var(--verde);margin-top:6px;}
+    .auth-logo p{font-size:.82rem;color:var(--texto2);margin-top:2px;}
+    .auth-box .campo{margin-bottom:14px;}
+    .auth-box .btn{margin-top:6px;padding:15px;}
+    .auth-switch{text-align:center;margin-top:16px;font-size:.85rem;color:var(--texto2);}
+    .auth-switch a{color:var(--verde2);cursor:pointer;font-weight:700;}
+
+    .spinner{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(max-width:500px){
+      .tipo-grid{grid-template-columns:1fr 1fr;}
+      .monto-grande-wrap input{font-size:1.8rem;width:160px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="pantalla-auth">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h2>Transacciones Financieras</h2>
+      <p id="auth-sub">Ingresa a tu cuenta</p>
+    </div>
+    <div id="alerta-auth" class="alerta"></div>
+    <div class="campo">
+      <label>Usuario</label>
+      <input type="text" id="auth-usuario" placeholder="Nombre de usuario" autocomplete="username"/>
+    </div>
+    <div class="campo">
+      <label>Contraseña</label>
+      <div class="pwd-wrap">
+        <input type="password" id="auth-contrasena" placeholder="••••••" autocomplete="current-password"/>
+        <button class="pwd-toggle" onclick="togglePwd('auth-contrasena',this)" type="button">👁</button>
+      </div>
+    </div>
+    <div class="campo" id="campo-saldo-inicial" style="display:none">
+      <label>Saldo inicial ($)</label>
+      <div class="input-prefijo"><span>$</span>
+        <input type="number" id="auth-saldo" value="1000" min="0" step="0.01"/>
+      </div>
+    </div>
+    <button class="btn btn-verde" id="btn-auth" onclick="autenticar()">
+      <span id="btn-auth-txt">Ingresar</span>
+    </button>
+    <div class="auth-switch">
+      <span id="auth-sw-txt">¿No tienes cuenta?</span>
+      <a onclick="alternarModo()"> <span id="auth-sw-link">Regístrate aquí</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="pantalla-app" style="display:none">
+  <header>
+    <h1>Transacciones Financieras</h1>
+    <div class="header-derecha">
+      <span id="info-usuario"></span>
+      <button id="btn-cerrar" onclick="cerrarSesion()">Salir</button>
+    </div>
+  </header>
+
+  <div class="contenedor">
+
+    <div class="saldo-hero">
+      <div class="saldo-etiqueta">Saldo disponible</div>
+      <div class="saldo-monto" id="saldo-display">$0.00</div>
+      <div class="saldo-sub">Cuenta activa</div>
+      <button class="saldo-actualizar" onclick="actualizarSaldo()">↻</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab activo" onclick="mostrarTab('tab-nueva')">💸 Transacción</button>
+      <button class="tab" onclick="mostrarTab('tab-resumen')">📊 Resumen</button>
+      <button class="tab" onclick="mostrarTab('tab-verificar')">🔒 Integridad</button>
+    </div>
+
+    <!-- TAB NUEVA -->
+    <div id="tab-nueva">
+
+      <div id="paso-tipo" class="tarjeta">
+        <p class="tarjeta-titulo">¿Qué quieres hacer hoy?</p>
+        <div id="alerta-tx" class="alerta"></div>
+        <div class="tipo-grid">
+          <button class="tipo-btn" onclick="seleccionarTipo('retiro',this)">
+            <span class="icono">🏧</span>
+            <span class="nombre">Retiro</span>
+            <span class="tasa">Comisión 1.0%</span>
+          </button>
+          <button class="tipo-btn" onclick="seleccionarTipo('transferencia',this)">
+            <span class="icono">↗️</span>
+            <span class="nombre">Transferencia</span>
+            <span class="tasa">Comisión 1.5%</span>
+          </button>
+          <button class="tipo-btn" onclick="seleccionarTipo('pago',this)">
+            <span class="icono">🛍️</span>
+            <span class="nombre">Pago</span>
+            <span class="tasa">Comisión 0.8%</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="paso-form" style="display:none">
+
+        <!-- RETIRO: sin modal, ejecuta directo -->
+        <div id="form-retiro" class="form-tx tarjeta">
+          <button class="btn-volver" onclick="volverATipos()">← Volver</button>
+          <p class="tarjeta-titulo">🏧 Retiro</p>
+
+          <div class="seccion-titulo">¿Dónde vas a retirar?</div>
+          <div class="campo">
+            <label>Tipo de retiro</label>
+            <select id="ret-destino">
+              <option value="cajero">Cajero automático</option>
+              <option value="punto">Punto de pago</option>
+              <option value="ventanilla">Ventanilla bancaria</option>
+            </select>
+          </div>
+
+          <div class="seccion-titulo">¿Cuánto vas a retirar?</div>
+          <div class="monto-grande">
+            <label>Ingresa el monto</label>
+            <div class="monto-grande-wrap">
+              <span class="simbolo">$</span>
+              <input type="number" id="ret-monto" placeholder="0.00" min="0.01" step="0.01"
+                     oninput="actualizarPreview('retiro','ret')"/>
+            </div>
+          </div>
+          <div id="preview-retiro" class="preview-comision">
+            <div class="preview-fila"><span>Monto a retirar</span><span id="ret-p-monto">$0.00</span></div>
+            <div class="preview-fila"><span>Comisión (1.0%)</span><span id="ret-p-com">$0.00</span></div>
+            <div class="preview-fila total rojo-txt"><span>Total debitado</span><span id="ret-p-tot">$0.00</span></div>
+          </div>
+
+          <div class="verificacion-pwd">
+            <div class="vc-icono">🔐</div>
+            <div class="vc-msg">Por seguridad, confirma tu contraseña para retirar</div>
+            <div class="campo">
+              <label>Contraseña de seguridad</label>
+              <div class="pwd-wrap">
+                <input type="password" id="ret-pwd" placeholder="Ingresa tu contraseña actual"/>
+                <button class="pwd-toggle" onclick="togglePwd('ret-pwd',this)" type="button">👁</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="alerta-retiro" class="alerta" style="margin-bottom:14px"></div>
+
+          <button class="btn btn-rojo" id="btn-ret" onclick="ejecutarRetiroDirecto()">
+            <span id="btn-ret-txt">Confirmar retiro →</span>
+          </button>
+        </div>
+
+        <!-- TRANSFERENCIA -->
+        <div id="form-transferencia" class="form-tx tarjeta">
+          <button class="btn-volver" onclick="volverATipos()">← Volver</button>
+          <p class="tarjeta-titulo">↗️ Transferencia</p>
+          
+          <div class="campo" style="margin-top:8px">
+            <label>Escribe número / cuenta</label>
+            <input type="text" id="tra-dest" placeholder="Nombre, número o cuenta"/>
+          </div>
+          <div class="campo">
+            <label>Banco / Billetera</label>
+            <select id="tra-banco">
+              <option>Nequi</option><option>Bancolombia</option>
+              <option>Davivienda</option><option>Banco de Bogotá</option>
+              <option>Otro</option>
+            </select>
+          </div>
+
+          <div class="seccion-titulo">¿Cuánto vas a transferir?</div>
+          <div class="monto-grande">
+            <label>Ingresa el monto</label>
+            <div class="monto-grande-wrap">
+              <span class="simbolo">$</span>
+              <input type="number" id="tra-monto" placeholder="0.00" min="0.01" step="0.01"
+                     oninput="actualizarPreview('transferencia','tra')"/>
+            </div>
+          </div>
+          <div id="preview-transferencia" class="preview-comision">
+            <div class="preview-fila"><span>Monto a transferir</span><span id="tra-p-monto">$0.00</span></div>
+            <div class="preview-fila"><span>Comisión (1.5%)</span><span id="tra-p-com">$0.00</span></div>
+            <div class="preview-fila total rojo-txt"><span>Total debitado</span><span id="tra-p-tot">$0.00</span></div>
+          </div>
+          <div class="campo">
+            <label>Mensaje (opcional)</label>
+            <input type="text" id="tra-msg" placeholder="Ej: Pago del almuerzo"/>
+          </div>
+          <button class="btn btn-verde" onclick="confirmar('transferencia')">Transferir →</button>
+        </div>
+
+        <!-- PAGO -->
+        <div id="form-pago" class="form-tx tarjeta">
+          <button class="btn-volver" onclick="volverATipos()">← Volver</button>
+          <p class="tarjeta-titulo">🛍️ Pago</p>
+
+          <div class="seccion-titulo">¿A quién le vas a pagar?</div>
+          <div class="campo">
+            <label>Tipo de pago</label>
+            <select id="pag-tipo" onchange="cambiarCamposPago()">
+              <option value="comercio">Comercio / Tienda</option>
+              <option value="servicio">Servicio público</option>
+              <option value="recarga">Recarga de celular</option>
+              <option value="factura">Factura de crédito</option>
+            </select>
+          </div>
+          <div id="campos-comercio">
+            <div class="campo"><label>Nombre del comercio</label>
+              <input type="text" id="pag-comercio" placeholder="Ej: Éxito, Jumbo"/>
+            </div>
+            <div class="campo"><label>Número de factura</label>
+              <input type="text" id="pag-factura" placeholder="Ej: FAC-2024-001234"/>
+            </div>
+          </div>
+          <div id="campos-servicio" style="display:none">
+            <div class="campo"><label>Empresa de servicios</label>
+              <select id="pag-empresa">
+                <option>EPM</option><option>ETB</option><option>Claro</option>
+                <option>Movistar</option><option>Gas Natural</option>
+              </select>
+            </div>
+            <div class="campo"><label>Número de contrato</label>
+              <input type="text" id="pag-contrato" placeholder="Ej: 123456789"/>
+            </div>
+          </div>
+          <div id="campos-recarga" style="display:none">
+            <div class="campo"><label>Operador</label>
+              <select id="pag-operador">
+                <option>Claro</option><option>Movistar</option><option>Tigo</option><option>WOM</option>
+              </select>
+            </div>
+            <div class="campo"><label>Número de celular</label>
+              <input type="tel" id="pag-celular" placeholder="310 123 4567" maxlength="10"/>
+            </div>
+          </div>
+
+          <div class="seccion-titulo">¿Cuánto vas a pagar?</div>
+          <div class="monto-grande">
+            <label>Ingresa el monto</label>
+            <div class="monto-grande-wrap">
+              <span class="simbolo">$</span>
+              <input type="number" id="pag-monto" placeholder="0.00" min="0.01" step="0.01"
+                     oninput="actualizarPreview('pago','pag')"/>
+            </div>
+          </div>
+          <div id="preview-pago" class="preview-comision">
+            <div class="preview-fila"><span>Valor a pagar</span><span id="pag-p-monto">$0.00</span></div>
+            <div class="preview-fila"><span>Comisión (0.8%)</span><span id="pag-p-com">$0.00</span></div>
+            <div class="preview-fila total rojo-txt"><span>Total debitado</span><span id="pag-p-tot">$0.00</span></div>
+          </div>
+          <button class="btn btn-verde" onclick="confirmar('pago')">Pagar →</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB RESUMEN -->
+    <div id="tab-resumen" style="display:none">
+      <div class="tarjeta">
+        <p class="tarjeta-titulo">📊 Resumen por tipo</p>
+        <div id="resumen-grid" class="resumen-grid"></div>
+      </div>
+      <div class="tarjeta">
+        <p class="tarjeta-titulo">Últimas transacciones</p>
+        <div id="lista-historial"></div>
+      </div>
+    </div>
+
+    <!-- TAB VERIFICAR -->
+    <div id="tab-verificar" style="display:none">
+      <div class="tarjeta">
+        <p class="tarjeta-titulo">🔒 Verificar integridad</p>
+        <p style="font-size:.85rem;color:var(--texto2);margin-bottom:18px">
+          Comprueba que el hash SHA-256 de una transacción no haya sido alterado en base de datos.
+        </p>
+        <div class="campo">
+          <label>ID de transacción</label>
+          <input type="text" id="ver-id" placeholder="Pega aquí el ID"/>
+        </div>
+        <button class="btn btn-verde" onclick="verificarIntegridad()">🔍 Verificar</button>
+        <div id="resultado-verificacion"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL solo para transferencia y pago -->
+<div id="modal-overlay" class="modal-overlay" onclick="cerrarModalClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-titulo" id="modal-titulo">Confirmar operación</div>
+    <div class="modal-sub">Revisa los detalles antes de continuar</div>
+    <div class="modal-resumen" id="modal-resumen"></div>
+    <div id="alerta-modal" class="alerta"></div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-verde" id="btn-confirmar" onclick="ejecutarTransaccion()">
+        <span id="btn-conf-txt">Confirmar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let TOKEN = '', USUARIO = '', MODO_REG = false, TIPO_ACTUAL = '', TX_PENDIENTE = null;
+const TASAS  = {retiro:.01, transferencia:.015, pago:.008};
+const ICONOS = {retiro:'🏧', transferencia:'↗️', pago:'🛍️'};
+
+// ─── AUTH ───
+function alternarModo(){
+  MODO_REG = !MODO_REG;
+  document.getElementById('auth-sub').textContent    = MODO_REG ? 'Crea tu cuenta' : 'Ingresa a tu cuenta';
+  document.getElementById('auth-sw-txt').textContent = MODO_REG ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+  document.getElementById('auth-sw-link').textContent= MODO_REG ? 'Inicia sesión' : 'Regístrate aquí';
+  document.getElementById('campo-saldo-inicial').style.display = MODO_REG ? 'block' : 'none';
+  document.getElementById('btn-auth-txt').textContent= MODO_REG ? 'Crear cuenta' : 'Ingresar';
+  ocultarAlerta('alerta-auth');
+}
+
+async function autenticar(){
+  const usuario    = document.getElementById('auth-usuario').value.trim();
+  const contrasena = document.getElementById('auth-contrasena').value;
+  if(!usuario||!contrasena) return mostrarAlerta('alerta-auth','Completa todos los campos.',true);
+  setBtnCargando('btn-auth','btn-auth-txt',true);
+  if(MODO_REG){
+    const saldo = parseFloat(document.getElementById('auth-saldo').value)||1000;
+    const res = await fetch(`${API}/api/registro`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({nombre_usuario:usuario,contrasena,saldo_inicial:saldo})});
+    setBtnCargando('btn-auth','btn-auth-txt',false,'Crear cuenta');
+    const d = await res.json();
+    if(!res.ok) return mostrarAlerta('alerta-auth',d.detail||'Error al registrar.',true);
+    mostrarAlerta('alerta-auth','¡Cuenta creada! Ahora inicia sesión.',false);
+    alternarModo();
+  } else {
+    const res = await fetch(`${API}/api/login`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({nombre_usuario:usuario,contrasena})});
+    setBtnCargando('btn-auth','btn-auth-txt',false,'Ingresar');
+    const d = await res.json();
+    if(!res.ok) return mostrarAlerta('alerta-auth',d.detail||'Credenciales incorrectas.',true);
+    TOKEN=d.token; USUARIO=d.usuario;
+    document.getElementById('pantalla-auth').style.display='none';
+    document.getElementById('pantalla-app').style.display='block';
+    actualizarSaldo();
+  }
+}
+
+function cerrarSesion(){
+  TOKEN=''; USUARIO='';
+  document.getElementById('pantalla-auth').style.display='flex';
+  document.getElementById('pantalla-app').style.display='none';
+  document.getElementById('auth-contrasena').value='';
+}
+
+// ─── SALDO ───
+async function actualizarSaldo(){
+  const r=await apiGet('/api/saldo');
+  if(r) document.getElementById('saldo-display').textContent=`$${r.saldo.toFixed(2)}`;
+}
+
+// ─── TABS ───
+function mostrarTab(id){
+  ['tab-nueva','tab-resumen','tab-verificar'].forEach(t=>{
+    document.getElementById(t).style.display=t===id?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('activo',['tab-nueva','tab-resumen','tab-verificar'][i]===id);
+  });
+  if(id==='tab-resumen') cargarResumen();
+}
+
+// ─── FLUJO TX ───
+function seleccionarTipo(tipo,btn){
+  TIPO_ACTUAL=tipo;
+  document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('seleccionado'));
+  btn.classList.add('seleccionado');
+  document.getElementById('paso-tipo').style.display='none';
+  document.getElementById('paso-form').style.display='block';
+  document.querySelectorAll('.form-tx').forEach(f=>f.classList.remove('visible'));
+  document.getElementById(`form-${tipo}`).classList.add('visible');
+  document.getElementById('paso-form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function volverATipos(){
+  document.getElementById('paso-tipo').style.display='block';
+  document.getElementById('paso-form').style.display='none';
+  document.querySelectorAll('.form-tx').forEach(f=>f.classList.remove('visible'));
+  ocultarAlerta('alerta-tx');
+  TIPO_ACTUAL='';
+}
+
+function actualizarPreview(tipo,p){
+  const monto=parseFloat(document.getElementById(`${p}-monto`).value)||0;
+  const com=monto*TASAS[tipo];
+  const tot=monto+com;
+  document.getElementById(`${p}-p-monto`).textContent=`$${monto.toFixed(2)}`;
+  document.getElementById(`${p}-p-com`).textContent=`$${com.toFixed(4)}`;
+  document.getElementById(`${p}-p-tot`).textContent=`$${tot.toFixed(2)}`;
+  document.getElementById(`preview-${tipo}`).classList.toggle('visible',monto>0);
+}
+
+function cambiarCamposPago(){
+  const t=document.getElementById('pag-tipo').value;
+  document.getElementById('campos-comercio').style.display=t==='comercio'?'block':'none';
+  document.getElementById('campos-servicio').style.display=t==='servicio'?'block':'none';
+  document.getElementById('campos-recarga').style.display=t==='recarga'?'block':'none';
+}
+
+function seleccionarContacto(nombre,cuenta,cardId){
+  document.getElementById('tra-dest').value=`${nombre} · ${cuenta}`;
+  ['cont-maria','cont-carlos'].forEach(id=>{
+    document.getElementById(id).classList.toggle('seleccionado',id===cardId);
+  });
+}
+
+// ─── RETIRO DIRECTO (sin modal) ───
+async function ejecutarRetiroDirecto(){
+  const monto=parseFloat(document.getElementById('ret-monto').value);
+  const pwd=document.getElementById('ret-pwd').value;
+  if(!monto||monto<=0) return mostrarAlerta('alerta-retiro','Ingresa un monto válido.',true);
+  if(!pwd)             return mostrarAlerta('alerta-retiro','Debes ingresar tu contraseña.',true);
+
+  setBtnCargando('btn-ret','btn-ret-txt',true);
+
+  // Verificar contraseña
+  const rv=await fetch(`${API}/api/login`,{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({nombre_usuario:USUARIO,contrasena:pwd})});
+  if(!rv.ok){
+    setBtnCargando('btn-ret','btn-ret-txt',false,'Confirmar retiro →');
+    return mostrarAlerta('alerta-retiro','❌ Contraseña incorrecta. Retiro cancelado.',true);
+  }
+
+  // Ejecutar
+  const res=await fetch(`${API}/api/transacciones`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${TOKEN}`},
+    body:JSON.stringify({monto,tipo:'retiro'})
+  });
+  setBtnCargando('btn-ret','btn-ret-txt',false,'Confirmar retiro →');
+  const d=await res.json();
+  if(!res.ok) return mostrarAlerta('alerta-retiro',d.detail||'Error al procesar.',true);
+
+  mostrarAlerta('alerta-tx',`✅ Retiro exitoso · Comisión $${d.transaccion.comision.toFixed(4)} · ID: ${d.transaccion.id}`,false);
+  actualizarSaldo();
+  volverATipos();
+  limpiarForms();
+}
+
+// ─── MODAL para transferencia y pago ───
+function recogerDatos(tipo){
+  const p={transferencia:'tra',pago:'pag'}[tipo];
+  const monto=parseFloat(document.getElementById(`${p}-monto`).value);
+  if(!monto||monto<=0) return {error:'Ingresa un monto válido.'};
+  if(tipo==='transferencia'){
+    const dest=document.getElementById('tra-dest').value.trim();
+    if(!dest) return {error:'Indica el destinatario.'};
+    return {monto,tipo,destinatario:dest,banco:document.getElementById('tra-banco').value,msg:document.getElementById('tra-msg').value};
+  }
+  return {monto,tipo,tipo_pago:document.getElementById('pag-tipo').value};
+}
+
+function confirmar(tipo){
+  const datos=recogerDatos(tipo);
+  if(datos.error) return mostrarAlerta('alerta-tx',datos.error,true);
+  TX_PENDIENTE=datos;
+  const com=datos.monto*TASAS[tipo];
+  const tot=datos.monto+com;
+  document.getElementById('modal-titulo').textContent=tipo==='transferencia'?'Confirmar transferencia ↗️':'Confirmar pago 🛍️';
+  let html=`
+    <div class="modal-fila"><span>Tipo</span><span>${ICONOS[tipo]} ${tipo}</span></div>
+    <div class="modal-fila"><span>Monto</span><span>$${datos.monto.toFixed(2)}</span></div>
+    <div class="modal-fila"><span>Comisión</span><span>$${com.toFixed(4)}</span></div>`;
+  if(tipo==='transferencia'){
+    html+=`<div class="modal-fila"><span>Para</span><span>${datos.destinatario}</span></div>`;
+    html+=`<div class="modal-fila"><span>Banco</span><span>${datos.banco}</span></div>`;
+  }
+  html+=`<div class="modal-fila dest-rojo"><span>Total debitado</span><span>$${tot.toFixed(2)}</span></div>`;
+  document.getElementById('modal-resumen').innerHTML=html;
+  document.getElementById('btn-confirmar').style.background='var(--rojo)';
+  ocultarAlerta('alerta-modal');
+  document.getElementById('modal-overlay').classList.add('visible');
+}
+
+async function ejecutarTransaccion(){
+  const datos=TX_PENDIENTE; if(!datos) return;
+  setBtnCargando('btn-confirmar','btn-conf-txt',true);
+  const res=await fetch(`${API}/api/transacciones`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${TOKEN}`},
+    body:JSON.stringify({monto:datos.monto,tipo:datos.tipo})
+  });
+  setBtnCargando('btn-confirmar','btn-conf-txt',false,'Confirmar');
+  const d=await res.json();
+  if(!res.ok) return mostrarAlerta('alerta-modal',d.detail||'Error al procesar.',true);
+  cerrarModal();
+  mostrarAlerta('alerta-tx',`✅ ${datos.tipo} exitoso · Comisión $${d.transaccion.comision.toFixed(4)} · ID: ${d.transaccion.id}`,false);
+  actualizarSaldo(); volverATipos(); limpiarForms();
+}
+
+function limpiarForms(){
+  ['ret-monto','ret-ciudad','ret-pwd','tra-monto','tra-dest','tra-msg','pag-monto'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.querySelectorAll('.preview-comision').forEach(p=>p.classList.remove('visible'));
+  document.querySelectorAll('.contacto-card').forEach(c=>c.classList.remove('seleccionado'));
+}
+
+function cerrarModal(){document.getElementById('modal-overlay').classList.remove('visible');TX_PENDIENTE=null;}
+function cerrarModalClick(e){if(e.target===document.getElementById('modal-overlay'))cerrarModal();}
+
+// ─── RESUMEN ───
+async function cargarResumen(){
+  const r=await apiGet('/api/resumen'); if(!r) return;
+  const grid=document.getElementById('resumen-grid');
+  grid.innerHTML=r.por_tipo?.length
+    ? r.por_tipo.map(x=>`
+        <div class="resumen-item">
+          <div class="ri-ico">${ICONOS[x._id]||'💳'}</div>
+          <div class="ri-tipo">${x._id}</div>
+          <div class="ri-monto">$${(x.total_monto||0).toFixed(2)}</div>
+          <div class="ri-sub">${x.cantidad} ops · com $${(x.total_comision||0).toFixed(2)}</div>
+        </div>`).join('')
+    : '<p style="color:var(--texto2);font-size:.88rem">Sin transacciones aún.</p>';
+
+  const lista=document.getElementById('lista-historial');
+  lista.innerHTML=r.historial?.length
+    ? r.historial.map(tx=>{
+        const f=new Date(tx.timestamp).toLocaleString('es-CO');
+        return `<div class="tx-item">
+          <div class="tx-icono-wrap ${tx.tipo}">${ICONOS[tx.tipo]||'💳'}</div>
+          <div class="tx-det">
+            <div class="tx-tipo">${tx.tipo}</div>
+            <div class="tx-fecha">${f}</div>
+            <button class="tx-id-btn" onclick="pegarId('${tx._id}')">ID: ${tx._id.slice(-8)}…</button>
+          </div>
+          <div class="tx-amt">
+            <div class="val">-$${(tx.monto_visible||0).toFixed(2)}</div>
+            <div class="com">Comisión $${(tx.comision||0).toFixed(4)}</div>
+          </div>
+        </div>`;}).join('')
+    : '<p style="color:var(--texto2);font-size:.88rem;padding:12px 0">No hay transacciones recientes.</p>';
+}
+
+function pegarId(id){mostrarTab('tab-verificar');document.getElementById('ver-id').value=id;}
+
+// ─── VERIFICAR ───
+async function verificarIntegridad(){
+  const id=document.getElementById('ver-id').value.trim(); if(!id) return;
+  const res=await fetch(`${API}/api/transacciones/${id}/verificar`,{headers:{Authorization:`Bearer ${TOKEN}`}});
+  const d=await res.json();
+  document.getElementById('resultado-verificacion').innerHTML=`
+    <div class="ver-res ${d.valida?'ver-ok':'ver-err'}">
+      <strong>${d.valida?'✔ ':'⚠ '}${d.mensaje}</strong><br/>
+      <small style="word-break:break-all">Hash: ${d.hash||''}</small>
+    </div>`;
+}
+
+// ─── UTILS ───
+async function apiGet(url){
+  try{const r=await fetch(`${API}${url}`,{headers:{Authorization:`Bearer ${TOKEN}`}});return r.ok?r.json():null;}
+  catch{return null;}
+}
+function togglePwd(id,btn){
+  const i=document.getElementById(id);
+  i.type=i.type==='password'?'text':'password';
+  btn.textContent=i.type==='password'?'👁':'🙈';
+}
+function mostrarAlerta(id,msg,err){
+  const el=document.getElementById(id);
+  el.textContent=msg;
+  el.className=`alerta ${err?'alerta-err':'alerta-ok'}`;
+  el.classList.add('visible');
+  setTimeout(()=>ocultarAlerta(id),7000);
+}
+function ocultarAlerta(id){const el=document.getElementById(id);if(el)el.classList.remove('visible');}
+function setBtnCargando(btnId,txtId,on,txtNormal=''){
+  const btn=document.getElementById(btnId),sp=document.getElementById(txtId);
+  btn.disabled=on;
+  sp.innerHTML=on?'<span class="spinner"></span>':(txtNormal||sp.textContent);
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('pantalla-auth').style.display!=='none') autenticar();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+#pip install -r requirements.txt
+
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+motor==3.4.0
+pymongo==4.7.2
+cryptography==42.0.5
+passlib[bcrypt]==1.7.4
+PyJWT==2.8.0L
+jinja2==3.1.4
+python-multipart==0.0.9
+pydantic==2.7.1
