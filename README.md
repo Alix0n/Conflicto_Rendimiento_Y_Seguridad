@@ -19,5 +19,7 @@ El sistema fue diseñado bajo una estructura modular, permitiendo:
 - Optimización de procesos críticos para mejorar rendimiento.
 - Posibilidad de escalar o reforzar seguridad según el contexto estratégico.
 
-Comando para clonar el respositorio: git clone "https://github.com/Alix0n/Conflicto_Rendimiento_Y_Seguridad.git"
+Comando para clonar el respositorio: git clone https://github.com/Alix0n/Conflicto_Rendimiento_Y_Seguridad.git
 Comando para ejecutar: python main.py
+
+Para probar las funcionalidades del sistema, puede registrarse e inciar sesion y proceder.
